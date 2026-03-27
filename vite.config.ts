@@ -16,18 +16,19 @@ export default defineConfig((config) => {
     define: {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
     },
-
     server: {
-      host: true,
-      allowedHosts: 'all'
-      // se quiser restringir no futuro:
-      // allowedHosts: ['boltdiy-cunha.up.railway.app']
+      host: '0.0.0.0',
+      port: 5173,
+      strictPort: false,
+      allowedHosts: [
+        'boltdiy-cunha.up.railway.app',
+        'localhost',
+        '127.0.0.1',
+      ],
     },
-
     build: {
       target: 'esnext',
     },
-
     plugins: [
       nodePolyfills({
         include: ['buffer', 'process', 'util', 'stream'],
@@ -39,7 +40,6 @@ export default defineConfig((config) => {
         protocolImports: true,
         exclude: ['child_process', 'fs', 'path'],
       }),
-
       {
         name: 'buffer-polyfill',
         transform(code, id) {
@@ -53,9 +53,7 @@ export default defineConfig((config) => {
           return null;
         },
       },
-
       config.mode !== 'test' && remixCloudflareDevProxy(),
-
       remixVitePlugin({
         future: {
           v3_fetcherPersist: true,
@@ -64,17 +62,11 @@ export default defineConfig((config) => {
           v3_lazyRouteDiscovery: true,
         },
       }),
-
       UnoCSS(),
-
       tsconfigPaths(),
-
       chrome129IssuePlugin(),
-
-      config.mode === 'production' &&
-        optimizeCssModules({ apply: 'build' }),
+      config.mode === 'production' && optimizeCssModules({ apply: 'build' }),
     ],
-
     envPrefix: [
       'VITE_',
       'OPENAI_LIKE_API_BASE_URL',
@@ -83,7 +75,6 @@ export default defineConfig((config) => {
       'LMSTUDIO_API_BASE_URL',
       'TOGETHER_API_BASE_URL',
     ],
-
     css: {
       preprocessorOptions: {
         scss: {
@@ -91,7 +82,6 @@ export default defineConfig((config) => {
         },
       },
     },
-
     test: {
       exclude: [
         '**/node_modules/**',
@@ -108,7 +98,6 @@ export default defineConfig((config) => {
 function chrome129IssuePlugin() {
   return {
     name: 'chrome129IssuePlugin',
-
     configureServer(server: ViteDevServer) {
       server.middlewares.use((req, res, next) => {
         const raw = req.headers['user-agent']?.match(/Chrom(e|ium)\/([0-9]+)\./);
@@ -118,16 +107,9 @@ function chrome129IssuePlugin() {
 
           if (version === 129) {
             res.setHeader('content-type', 'text/html');
-
-            res.end(`
-              <body>
-                <h1>Please use Chrome Canary for testing.</h1>
-                <p>
-                  Chrome 129 has an issue with JavaScript modules & Vite local development.
-                </p>
-              </body>
-            `);
-
+            res.end(
+              '<body><h1>Please use Chrome Canary for testing.</h1><p>Chrome 129 has an issue with JavaScript modules & Vite local development.</p></body>',
+            );
             return;
           }
         }
